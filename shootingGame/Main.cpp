@@ -5,12 +5,15 @@ void ICGUI_Create()
 	ICG_MWSize(700, 700);
 }
 
-ICBYTES A;
+ICBYTES Bullet;
+ICBYTES Square;
 int keypressed = 0;
 int FRM1, BTN;
 void* gameStart(PVOID lpParam)
 {
-	// CreateMatrix(A, X, Y, Z, W, ICB_UINT);
+	// CreateMatrix(Bullet, X, Y, Z, W, ICB_UINT);
+	// CreateMatrix(Square, X, Y, Z, W, ICB_UINT);
+	//RandomUniform(mat, x,y,z)
 	ICBYTES map;
 	CreateImage(map, 560, 620, ICB_UINT);
 	int x = 230, y = 590;
@@ -34,7 +37,7 @@ void WhenKeyPressed(int k)
 }
 
 void Start()
-{
+{ 
 	DWORD dw;
 
 	ICG_SetWindowText(BTN, "TIKLAMA");
