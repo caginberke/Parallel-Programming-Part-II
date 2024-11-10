@@ -12,6 +12,7 @@ enum HitPos
 
 struct MyStruct
 {
+    HWND main;
     bool gameOver;
     int shipX, shipY;
     bool boxActive;
@@ -38,15 +39,9 @@ void ICGUI_Create()
     ICG_MWTitle("Shooting Game");
     ICG_MWSize(700, 700);
     ICG_MWPosition(0, 0);
+    ICG_MW_RemoveTitleBar();
 }
 
-void ICGUI_Create(int width, int height, int posX, int posY)
-{
-
-    ICG_MWTitle("Shooting Game");
-    ICG_MWSize(width, height);
-    ICG_MWPosition(posX, posY);
-}
 
 
 
@@ -60,17 +55,25 @@ void* ShipThread(PVOID lpParam)
 
     while (TRUE)
     {
+        SetWindowPos(data->main, NULL, data->shipX, data->shipY, 50, 50, NULL);
 
-        FillRect(map, data->shipX, data->shipY, 20, 6, 0xffff00);
-        DisplayImage(data->FRM1, map);
-        Sleep(10);
-        FillRect(map, data->shipX, data->shipY, 20, 6, 0);
+        //FillRect(map, data->shipX, data->shipY, 20, 6, 0xffff00);
+        //DisplayImage(data->FRM1, map);
+        //Sleep(10);
+        //FillRect(map, data->shipX, data->shipY, 20, 6, 0);
+        Sleep(2);
 
         if (keypressed == 39 && data->shipX < 540)
-            data->shipX++;  
+            data->shipX++;
 
         else if (keypressed == 37 && data->shipX > 0)
             data->shipX--;
+
+        else if (keypressed == VK_UP)
+            data->shipY--;
+
+        else if (keypressed == VK_DOWN)
+            data->shipY++;
     }
     return NULL;
 }
@@ -146,8 +149,6 @@ void* BulletThread(PVOID lpParam)
             Sleep(20);
             FillRect(map, bulletX, bulletY, 3, 10, 0); 
 
-            ICGUI_Create(200, 200, bulletX, bulletY);
-
             bulletY -= 10;
 
             if (bulletY < 0)
@@ -173,9 +174,6 @@ void* BulletThread(PVOID lpParam)
                 }
 
             }
-            
-
-            
         }
     }
 }
@@ -190,7 +188,8 @@ void ICGUI_main()
 
 {
     MyStruct* gameData = new MyStruct;
-
+    
+    gameData->main = ICG_GetMainWindow();
     gameData->FRM1 = ICG_FrameMedium(5, 5, 560, 620);
     ICG_Button(570, 5, 100, 25, "BAÞLAT", Start, gameData);
     ICG_SetOnKeyPressed(WhenKeyPressed);
