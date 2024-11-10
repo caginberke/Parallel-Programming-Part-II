@@ -9,6 +9,7 @@ enum HitPos
     Right,
     End
 };
+
 struct MyStruct
 {
     bool gameOver;
@@ -16,7 +17,9 @@ struct MyStruct
     bool boxActive;
     HitPos boxHit;
     int boxX, boxY;
+    int FRM1;
 
+    int width, height, posX, posY;
     void Restart()
     {
         gameOver = false;
@@ -24,7 +27,7 @@ struct MyStruct
         shipX = 280;
         boxActive = true;
         boxHit = None;
-        boxX = rand() % (540 - 0 + 1) + 0;;
+        boxX = rand() % 541;;
         boxY = 0;
     }
 };
@@ -37,8 +40,17 @@ void ICGUI_Create()
     ICG_MWPosition(0, 0);
 }
 
+void ICGUI_Create(int width, int height, int posX, int posY)
+{
+
+    ICG_MWTitle("Shooting Game");
+    ICG_MWSize(width, height);
+    ICG_MWPosition(posX, posY);
+}
+
+
+
 int keypressed = 0;
-int FRM1;
 ICBYTES map;
 
 
@@ -50,7 +62,7 @@ void* ShipThread(PVOID lpParam)
     {
 
         FillRect(map, data->shipX, data->shipY, 20, 6, 0xffff00);
-        DisplayImage(FRM1, map);
+        DisplayImage(data->FRM1, map);
         Sleep(10);
         FillRect(map, data->shipX, data->shipY, 20, 6, 0);
 
@@ -99,7 +111,7 @@ void* BoxThread(PVOID lpParam)
 
         }
         FillRect(map, data->boxX, data->boxY, 20, 20, 0xffff00);
-        DisplayImage(FRM1, map);
+        DisplayImage(data->FRM1, map);
         Sleep(10);
         FillRect(map, data->boxX, data->boxY, 20, 20, 0);
     }
@@ -130,9 +142,11 @@ void* BulletThread(PVOID lpParam)
         {
 
             FillRect(map, bulletX, bulletY, 3, 10, 0xFF0000);
-            DisplayImage(FRM1, map);
+            DisplayImage(data->FRM1, map);
             Sleep(20);
             FillRect(map, bulletX, bulletY, 3, 10, 0); 
+
+            ICGUI_Create(200, 200, bulletX, bulletY);
 
             bulletY -= 10;
 
@@ -145,17 +159,17 @@ void* BulletThread(PVOID lpParam)
 
             if (bulletY - 20 < data->boxY && data->boxHit == None)
             {
-                if (bulletX <= data->boxX + 3 && bulletX >= data->boxX - 4)
+                if (bulletX >= data->boxX  && bulletX <= data->boxX + 5)
+                {
+                    data->boxHit = Right;
+                }
+                if(bulletX>=data->boxX +6 && bulletX<=data->boxX +13)
                 {
                     data->boxHit = Middle;
                 }
-                else if(bulletX<data->boxX - 4 && bulletX>data->boxX - 10)
+                if (bulletX>=data->boxX + 14 && bulletX<=data->boxX + 20)
                 {
                     data->boxHit = Left;
-                }
-                else if (bulletX>data->boxX + 3 && bulletX<data->boxX + 10)
-                {
-                    data->boxHit = Right;
                 }
 
             }
@@ -173,11 +187,12 @@ void Start(void* arg);
 void WhenKeyPressed(int k) { keypressed = k; }
 
 void ICGUI_main()
+
 {
     MyStruct* gameData = new MyStruct;
 
+    gameData->FRM1 = ICG_FrameMedium(5, 5, 560, 620);
     ICG_Button(570, 5, 100, 25, "BAÞLAT", Start, gameData);
-    FRM1 = ICG_FrameMedium(5, 5, 560, 620);
     ICG_SetOnKeyPressed(WhenKeyPressed);
 }
 
@@ -195,6 +210,5 @@ void Start(void* arg)
     CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ShipThread, arg, 0, 0);
     CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BulletThread, arg, 0, 0);
     CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BoxThread, arg, 0, 0);
-    // TODO: BoxThread
 
 }
