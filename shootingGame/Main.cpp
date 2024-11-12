@@ -12,18 +12,17 @@ enum HitPos
 
 struct MyStruct
 {
-    HWND main;
-    bool gameOver;
-    int shipX, shipY;
-    bool boxActive;
-    HitPos boxHit;
-    int boxX, boxY;
-    int FRM1;
+    HWND main;              //Main window handle
+    bool gameStart = false; //Not working flag
+    int shipX, shipY;       //Ship coordinates
+    bool boxActive;         //Ýf the box active
+    HitPos boxHit;          //Current hit position
+    int boxX, boxY;         //Box coordinates
+    int FRM1;               //Frame
 
-    int width, height, posX, posY;
+    //int width, height, posX, posY;
     void Restart()
     {
-        gameOver = false;
         shipY = 590;
         shipX = 280;
         boxActive = true;
@@ -39,8 +38,9 @@ void ICGUI_Create()
     ICG_MWTitle("Shooting Game");
     ICG_MWSize(700, 700);
     ICG_MWPosition(0, 0);
-    ICG_MW_RemoveTitleBar();
+    //ICG_MW_RemoveTitleBar();
 }
+
 
 
 
@@ -52,28 +52,25 @@ ICBYTES map;
 void* ShipThread(PVOID lpParam)
 {
     MyStruct* data = (MyStruct*)lpParam;
+    data->gameStart = true;
 
     while (TRUE)
     {
-        SetWindowPos(data->main, NULL, data->shipX, data->shipY, 50, 50, NULL);
 
-        //FillRect(map, data->shipX, data->shipY, 20, 6, 0xffff00);
-        //DisplayImage(data->FRM1, map);
-        //Sleep(10);
-        //FillRect(map, data->shipX, data->shipY, 20, 6, 0);
-        Sleep(2);
+        //Draw the ship
+        FillRect(map, data->shipX, data->shipY, 20, 6, 0xffff00);
+        DisplayImage(data->FRM1, map);
+        Sleep(10);
+        FillRect(map, data->shipX, data->shipY, 20, 6, 0);
 
+
+        //Move the ship
         if (keypressed == 39 && data->shipX < 540)
-            data->shipX++;
+            data->shipX += 3;
 
         else if (keypressed == 37 && data->shipX > 0)
-            data->shipX--;
+            data->shipX -=3;
 
-        else if (keypressed == VK_UP)
-            data->shipY--;
-
-        else if (keypressed == VK_DOWN)
-            data->shipY++;
     }
     return NULL;
 }
@@ -81,38 +78,44 @@ void* ShipThread(PVOID lpParam)
 void* BoxThread(PVOID lpParam)
 {
     MyStruct* data = (MyStruct*)lpParam;
+
+    //Update box based on current hit status
+
     while (TRUE)
     {
         switch (data->boxHit)
         {
         case None:
-            data->boxY++;
+            data->boxY += 2; 
             if (data->boxY > 620)
                 data->boxHit = End;
             break;
 
         case Left:
-            if (--data->boxY <= 1 || --data->boxX <= 1)
+            if ((data->boxY -= 5) <= 1 || (data->boxX -= 2) <= 1)
                 data->boxHit = End;
             break;
 
         case Middle:
-            if (--data->boxY <= 1)
+            if ((data->boxY -= 5) <= 1)
                 data->boxHit = End;
             break;
 
         case Right:
-            if (--data->boxY <= 1 || ++data->boxX >= 560)
+            if ((data->boxY -= 5) <= 1 || (data->boxX += 2) >= 560)
                 data->boxHit = End;
             break;
 
+
         case End:
             data->boxHit = None;
-            data->boxX = rand() % (540 - 0 + 1) + 0;
+            data->boxX = rand() % 540;
             data->boxY = 0;
             break;
 
         }
+
+        //Draw the box
         FillRect(map, data->boxX, data->boxY, 20, 20, 0xffff00);
         DisplayImage(data->FRM1, map);
         Sleep(10);
@@ -133,7 +136,7 @@ void* BulletThread(PVOID lpParam)
 
     while (TRUE)
     {
-
+        //Fire the bullet
         if (keypressed == 32 && !bulletActive) 
         {
             bulletActive = true;
@@ -143,14 +146,15 @@ void* BulletThread(PVOID lpParam)
 
         if (bulletActive)
         {
-
+            //Draw and move the bullet
             FillRect(map, bulletX, bulletY, 3, 10, 0xFF0000);
             DisplayImage(data->FRM1, map);
             Sleep(20);
             FillRect(map, bulletX, bulletY, 3, 10, 0); 
 
-            bulletY -= 10;
+            bulletY -= 15;
 
+            //Check if the bullet in the screen  
             if (bulletY < 0)
             {
                 bulletActive = false;
@@ -158,6 +162,7 @@ void* BulletThread(PVOID lpParam)
 
             }
 
+            //Check if the bullet hit 
             if (bulletY - 20 < data->boxY && data->boxHit == None)
             {
                 if (bulletX >= data->boxX  && bulletX <= data->boxX + 5)
@@ -187,6 +192,7 @@ void WhenKeyPressed(int k) { keypressed = k; }
 void ICGUI_main()
 
 {
+    //Creating Struct and Main 
     MyStruct* gameData = new MyStruct;
     
     gameData->main = ICG_GetMainWindow();
@@ -197,17 +203,25 @@ void ICGUI_main()
 
 void Start(void* arg)
 {
+
+
+    MyStruct* data = (MyStruct*)arg;
+
     SetFocus(ICG_GetMainWindow());
 
-    // Init Game Data
+    //Init Game Data
     ((MyStruct*)arg)->Restart();
 
-    // Init Game Screen
+    //Init Game Screen
     CreateImage(map, 560, 620, ICB_UINT);
 
-
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ShipThread, arg, 0, 0);
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BulletThread, arg, 0, 0);
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BoxThread, arg, 0, 0);
+    //Not working if
+    if (!data->gameStart)
+    {   
+        //All Threads
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ShipThread, arg, 0, 0);
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BulletThread, arg, 0, 0);
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BoxThread, arg, 0, 0);
+    }
 
 }
